@@ -1,0 +1,186 @@
+{
+	"info": {
+		"_postman_id": "84bbf540-a44f-4446-997b-3da3a42b8430",
+		"name": "BitcoinPrice_AIPrediction",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6740168",
+		"_collection_link": "https://galactic-robot-738238.postman.co/workspace/Test~e9e31c1c-a276-4be3-8257-26f135c2a84b/collection/6740168-84bbf540-a44f-4446-997b-3da3a42b8430?action=share&source=collection_link&creator=6740168"
+	},
+	"item": [
+		{
+			"name": "Get_Bitcoin_Data",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let to_date = Date.UTC(2025, 7, 18, 0, 0, 0); // months are 0-indexed: 7 = August\r",
+							"let from_date = Date.UTC(2025, 7, 11, 0, 0, 0);\r",
+							"pm.environment.set(\"to_date\", to_date);\r",
+							"pm.environment.set(\"from_date\", from_date);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let data = pm.response.json()\r",
+							"let safeString = JSON.stringify(data)\r",
+							"  .replace(/\\\\/g, \"\\\\\\\\\")   // escape backslashes\r",
+							"  .replace(/\"/g, '\\\\\"')     // escape double quotes\r",
+							"  .replace(/\\n/g, \"\\\\n\");   // escape newlines\r",
+							"\r",
+							"pm.environment.set(\"bitcoin_data\", safeString);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "3d22940be1eb70fcfe47f0fc0de9a7fa",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from={{from_date}}&to={{to_date}}",
+					"protocol": "https",
+					"host": [
+						"api",
+						"coingecko",
+						"com"
+					],
+					"path": [
+						"api",
+						"v3",
+						"coins",
+						"bitcoin",
+						"market_chart",
+						"range"
+					],
+					"query": [
+						{
+							"key": "vs_currency",
+							"value": "usd"
+						},
+						{
+							"key": "from",
+							"value": "{{from_date}}"
+						},
+						{
+							"key": "to",
+							"value": "{{to_date}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Data Analysing AI",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let ai_response = pm.response.json()['candidates'][0]['content']['parts'][0]['text']\r",
+							"let ai_response_json = JSON.parse(ai_response)\r",
+							"console.log(ai_response_json)\r",
+							"let highest_price = Number(ai_response_json['highest_price'])\r",
+							"console.log(highest_price)\r",
+							"// Test\r",
+							"pm.test(\"High price is greater than threshold\", function () {\r",
+							"    pm.expect(highest_price).to.be.below(100000);\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"contents\": [\r\n    {\r\n      \"role\": \"user\",\r\n      \"parts\": [\r\n        {\r\n          \"text\": \"You are a crypto market analyst. Based on the following Bitcoin prices from the provided date range:\\n{{bitcoin_data}}\\n\\nProvide:\\n1) predict highest price for tommorow in json format. here is the example {higest_price: '1.25'}\"\r\n        }\r\n      ]\r\n    }\r\n  ],\r\n  \"generationConfig\": {\r\n    \"responseMimeType\": \"application/json\"\r\n  }\r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={{api_key}}",
+					"protocol": "https",
+					"host": [
+						"generativelanguage",
+						"googleapis",
+						"com"
+					],
+					"path": [
+						"v1beta",
+						"models",
+						"gemini-1.5-flash:generateContent"
+					],
+					"query": [
+						{
+							"key": "key",
+							"value": "{{api_key}}"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
